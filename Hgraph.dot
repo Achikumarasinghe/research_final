@@ -1,0 +1,17 @@
+graph G {
+graph [shape="ellipse"];
+subgraph cluster2 {
+asset
+asset -- financial [label=0.13,dir=forward];
+subgraph cluster1 {
+fund -- price [label=0.16];
+price -- global [label=0.16];
+global -- company [label=0.2];
+company -- fund [label=0.2];
+label=Cluster1
+}
+label=Cluster2
+}
+asset -- cluster1 [label=0.13,dir=forward];
+cluster1--financial[label=-0.0093,color=red,fontcolor=red];
+}

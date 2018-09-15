@@ -1,0 +1,9 @@
+digraph family {
+	size="10,10";
+asset->company[len=4.09074308190703,label=0.136418972697656,dir=back];
+asset->financial[len=4.10300542110885,label=0.13233152629705];
+fund->price[len=4.02707668401374,label=0.157641105328752];
+price->global[len=4.02707668401374,label=0.157641105328752];
+global->company[len=3.91438716207586,label=0.195204279308046];
+company->fund[len=3.91438716207586,label=0.195204279308046];
+}

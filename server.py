@@ -24,10 +24,42 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///E:/SLIIT1/4th year/RESEARCH/W
 db = SQLAlchemy(app)
 
 corpus = []
+stemmer = PorterStemmer()
 
 class filesSave(db.Model):
     name = db.Column(db.String(400),primary_key=True)
     data = db.Column(db.LargeBinary)
+
+def getClosestTerm(term,transformer,model):
+ 
+    term = stemmer.stem(term)
+    index = transformer.vocabulary_[term]      
+ 
+    model = np.dot(model,model.T)
+    searchSpace =np.concatenate( (model[index][:index] , model[index][(index+1):]) )  
+ 
+    out = np.argmax(searchSpace)
+ 
+    if out<index:
+        return transformer.get_feature_names()[out]
+    else:
+        return transformer.get_feature_names()[(out+1)]
+
+#kcloset term
+def kClosestTerms(k,term,tf,model):
+ 
+    term = stemmer.stem(term)
+    index = tf.vocabulary_[term]
+ 
+    model = np.dot(model,model.T)
+ 
+    closestTerms = {}
+    for i in range(len(model)):
+        closestTerms[tf.get_feature_names()[i]] = model[index][i]
+ 
+    sortedList = sorted(closestTerms , key= lambda l : closestTerms[l])
+ 
+    return sortedList[::-1][0:k]
 
 @app.route('/')
 def index():
@@ -62,8 +94,73 @@ def createOntology():
     print("TFIDF WITH FEATURE NAMES\n",tfidf_matrix_df)
     print("= ="*20)
 
+    svd =  TruncatedSVD(n_components=2,n_iter=5)
+    lsa = svd.fit_transform(tfidf_matrix.T)
+
+    a = getClosestTerm("asset",tf,lsa)
+
+    concepts = ["fund","price","asset","global"]
+
+    sim_matrix = np.dot(lsa,lsa.T)
+
+    kterms_f = []
+    for i in concepts:
+        kterms = kClosestTerms(3,i,tf,lsa)
+        for term in kterms:
+            if term not in kterms_f:
+                kterms_f.append(term)
+        print(kterms)
     
-    return "oks"
+    print(kterms_f)
+    #append them in to ontology array
+    for term1 in kterms_f:
+        if term1 not in concepts:
+            concepts.append(term1)
+
+    print(concepts)
+    #get the index
+    index_array = []
+    for y in concepts:
+        index = tf.vocabulary_[y]
+        index_array.append(index)
+
+    print(index_array)
+
+    rows=[]
+    rows_f=[]
+
+    for r in index_array:
+        for c in index_array:
+            rows.append(sim_matrix[r][c])
+            print(r," - ",c," =rows\n",rows)
+        rows_f.append(rows)
+        print("aaray\n",rows_f)
+        rows=[]
+    
+    rows_m = np.array(rows_f)
+    print("rows_m\n",rows_m)
+
+    final_sim_matrix = np.asmatrix(rows_m)
+    print("matirx\n",final_sim_matrix)
+
+    final_sim_matrix_df = pd.DataFrame(final_sim_matrix,columns=concepts)
+    print("df\n",final_sim_matrix_df)
+
+    #save data frame to csv
+    final_sim_matrix_df.to_csv("dataframe.csv",index=False)
+
+    #call R Script
+    command = 'C:/Program Files/R/R-3.5.1/bin/Rscript'
+    path2script = 'E:/SLIIT1/4th year/RESEARCH/Workspace/research_final/testr.R'
+    #rgs = r_dataframe
+    retcode = subprocess.call([command, path2script], shell=True)
+
+    #geaph to pdf
+    os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+    path = 'Igraph.dot'
+    s = Source.from_file(path)
+    #s.view()
+    return a
     
 
 
