@@ -17,6 +17,9 @@ from sklearn.preprocessing import Normalizer
 import subprocess
 from graphviz import Source
 import binascii
+import graphviz
+from flask import send_file
+import zipfile
 
 
 app =  Flask (__name__)
@@ -157,10 +160,16 @@ def createOntology():
 
     #geaph to pdf
     os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
-    path = 'Igraph.dot'
-    s = Source.from_file(path)
-    #s.view()
-    return a
+    path_i = 'Igraph.dot'
+    path_h = 'Hgraph.dot'
+    graphviz.render('dot', 'pdf', path_i, quiet=False)
+    graphviz.render('dot', 'pdf', path_h, quiet=False)
+
+    zipf = zipfile.ZipFile('Onto.zip','w', zipfile.ZIP_DEFLATED)
+    zipf.write('Igraph.dot.pdf')
+    zipf.write('Hgraph.dot.pdf')
+    zipf.close()
+    return send_file('Onto.zip',mimetype = 'zip',attachment_filename= 'Onto.zip',as_attachment = True)
     
 
 
