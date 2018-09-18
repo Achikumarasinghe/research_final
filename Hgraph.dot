@@ -1,17 +1,65 @@
 graph G {
 graph [shape="ellipse"];
+share
+subgraph cluster8 {
+liability
+trade
+speculate
+action
+subgraph cluster4 {
+rupee
+subgraph cluster3 {
+central -- sri [label=0.089];
+sri -- lanka [label=0.088];
+lanka -- central [label=0.089];
+label=Cluster3
+}
+label=Cluster4
+}
+subgraph cluster7 {
+company
+subgraph cluster6 {
+gain
+subgraph cluster5 {
+stock
+close
 subgraph cluster2 {
-asset
-asset -- financial [label=0.13,dir=forward];
+shares
 subgraph cluster1 {
-fund -- price [label=0.16];
-price -- global [label=0.16];
-global -- company [label=0.2];
-company -- fund [label=0.2];
+earnings -- rs [label=0.11];
 label=Cluster1
 }
 label=Cluster2
 }
-asset -- cluster1 [label=0.13,dir=forward];
-cluster1--financial[label=-0.0093,color=red,fontcolor=red];
+label=Cluster5
+}
+label=Cluster6
+}
+label=Cluster7
+}
+label=Cluster8
+}
+cluster4 -- liability [label=0.021,dir=forward];
+cluster4 -- trade [label=0.021,dir=forward];
+cluster4 -- speculate [label=0.021,dir=forward];
+cluster4 -- action [label=0.021,dir=forward];
+cluster4 -- cluster7 [label=0.0058,dir=forward];
+rupee -- cluster3 [label=0.067];
+cluster6 -- company [label=0.02];
+gain -- cluster5 [label=0.028];
+cluster2 -- stock [label=0.04,dir=forward];
+cluster2 -- close [label=0.041,dir=forward];
+cluster1 -- shares [label=0.076];
+cluster8 -- share [label=0.003,dir=forward];
+stock--close[label=0.019,color=red,fontcolor=red];
+liability--trade[label=0.0057,color=red,fontcolor=red];
+liability--speculate[label=0.0057,color=red,fontcolor=red];
+liability--action[label=0.0057,color=red,fontcolor=red];
+liability--cluster7[label=0.00063,color=red,fontcolor=red];
+trade--speculate[label=0.0057,color=red,fontcolor=red];
+trade--action[label=0.0057,color=red,fontcolor=red];
+trade--cluster7[label=0.00063,color=red,fontcolor=red];
+speculate--action[label=0.0057,color=red,fontcolor=red];
+speculate--cluster7[label=0.00063,color=red,fontcolor=red];
+action--cluster7[label=0.00063,color=red,fontcolor=red];
 }

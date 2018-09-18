@@ -1,5 +1,6 @@
-from flask import Flask,request
+from flask import Flask,request,Response,render_template
 from flask_sqlalchemy import SQLAlchemy
+import requests
 import sqlite3
 import sys
 import os
@@ -20,6 +21,7 @@ import binascii
 import graphviz
 from flask import send_file
 import zipfile
+import io
 
 
 app =  Flask (__name__)
@@ -27,15 +29,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///E:/SLIIT1/4th year/RESEARCH/W
 db = SQLAlchemy(app)
 
 corpus = []
+concepts = []
+id_list = []
 stemmer = PorterStemmer()
 
-class filesSave(db.Model):
+class finance_text(db.Model):
     name = db.Column(db.String(400),primary_key=True)
     data = db.Column(db.LargeBinary)
 
 def getClosestTerm(term,transformer,model):
  
-    term = stemmer.stem(term)
+    #term = stemmer.stem(term)
     index = transformer.vocabulary_[term]      
  
     model = np.dot(model,model.T)
@@ -51,9 +55,12 @@ def getClosestTerm(term,transformer,model):
 #kcloset term
 def kClosestTerms(k,term,tf,model):
  
-    term = stemmer.stem(term)
-    index = tf.vocabulary_[term]
- 
+    #term = stemmer.stem(term)
+    try:
+        index = tf.vocabulary_[term]
+    except Exception:
+        return ["N/A"]
+
     model = np.dot(model,model.T)
  
     closestTerms = {}
@@ -66,29 +73,44 @@ def kClosestTerms(k,term,tf,model):
 
 @app.route('/')
 def index():
-    return 'hi'
+    return render_template('home.html')
+
 
 @app.route('/storefile',methods = ['POST'])
 def storeFile():
     file  = request.files['inputfile']
-    newFile = filesSave(name=file.filename,data = file.read())
+    newFile = finance_text(name=file.filename,data = file.read())
     db.session.add(newFile)
     db.session.commit() 
     return 'Saved : '+ file.filename
 
-@app.route('/ontology',methods = ['POST'])
-def createOntology():
+
+
+@app.route('/ontologyFinance',methods = ['POST'])
+def createFinanceOntology():
+    #request json and put nodes in to a list
+    r = requests.get('http://ontology-api-dev.jtzupwqmvj.us-east-1.elasticbeanstalk.com/ontology/get_domain_nodes?domain=Finance').json()
+    id_list1 = []
+    for n in r['nodes']:
+        id_list1.append(n)
+    for id in id_list1:
+        name = r['nodes'][id]['propertyList'][0]['value']
+        concepts.append(name)
+    
+
+    #connect to DB and get all text files
     conn = sqlite3.connect('filestorage.db')
     cur = conn.cursor()
-    cur.execute("SELECT * FROM files_save")
+    cur.execute("SELECT * FROM finance_text")
     rows = cur.fetchall()
-    
+
+    #append them in to corpus
     for row in rows:
         corpus.append((row[0], row[1]))
         #print(row[0], str(row[1]),'ascii')
 
     print(corpus)
-    tf = TfidfVectorizer(analyzer='word', min_df = 0, stop_words = 'english')
+    tf = TfidfVectorizer(analyzer='word', min_df = 0, stop_words = 'english',token_pattern=r'\b[^\d\W]+\b')
 
     tfidf_matrix =  tf.fit_transform([content for file, content in corpus])
 
@@ -97,13 +119,10 @@ def createOntology():
     print("TFIDF WITH FEATURE NAMES\n",tfidf_matrix_df)
     print("= ="*20)
 
+    #singular value dicomposition
     svd =  TruncatedSVD(n_components=2,n_iter=5)
     lsa = svd.fit_transform(tfidf_matrix.T)
-
-    a = getClosestTerm("asset",tf,lsa)
-
-    concepts = ["fund","price","asset","global"]
-
+        
     sim_matrix = np.dot(lsa,lsa.T)
 
     kterms_f = []
@@ -117,15 +136,25 @@ def createOntology():
     print(kterms_f)
     #append them in to ontology array
     for term1 in kterms_f:
-        if term1 not in concepts:
-            concepts.append(term1)
+        if term1 != "N/A":
+            if term1 not in concepts:
+                concepts.append(term1)
 
+       
     print(concepts)
     #get the index
     index_array = []
+    concepts_final = []
+    
     for y in concepts:
-        index = tf.vocabulary_[y]
+        try:
+            index = tf.vocabulary_[y]
+            concepts_final.append(y)
+        except Exception:
+            continue
+
         index_array.append(index)
+    
 
     print(index_array)
 
@@ -137,16 +166,16 @@ def createOntology():
             rows.append(sim_matrix[r][c])
             print(r," - ",c," =rows\n",rows)
         rows_f.append(rows)
-        print("aaray\n",rows_f)
+        print("aray\n",rows_f)
         rows=[]
     
     rows_m = np.array(rows_f)
     print("rows_m\n",rows_m)
 
     final_sim_matrix = np.asmatrix(rows_m)
-    print("matirx\n",final_sim_matrix)
+    print("matrx\n",final_sim_matrix)
 
-    final_sim_matrix_df = pd.DataFrame(final_sim_matrix,columns=concepts)
+    final_sim_matrix_df = pd.DataFrame(final_sim_matrix,columns=concepts_final)
     print("df\n",final_sim_matrix_df)
 
     #save data frame to csv
@@ -169,12 +198,12 @@ def createOntology():
     zipf.write('Igraph.dot.pdf')
     zipf.write('Hgraph.dot.pdf')
     zipf.close()
-    return send_file('Onto.zip',mimetype = 'zip',attachment_filename= 'Onto.zip',as_attachment = True)
+    return send_file('Onto.zip',mimetype = 'zip',as_attachment = True)
     
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='localhost', port=8080,debug=True)
 
 
 
