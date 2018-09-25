@@ -6,13 +6,26 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   </head>
   <body>
-      <h3>Ontology Enrichment</h3>
-
-    <form action="{{url_for('createFinanceOntology')}}" method="post">
+      <h3 style="text-align: center;margin-top: 40px">Ontology Enrichment</h3>
+      <br>
+      <br>
+<table style="margin-left: 40%">
+  <tr>
+    <td style="padding: 10px;">
+      <form action="{{url_for('createFinanceOntology')}}" method="post">
         
         <input type="submit" value="Finance Ontology" class="btn btn-danger">
       </form>
-      
+    </td>
+    <td style="padding: 10px;">
+      <form action="{{url_for('createPoliticOntology')}}" method="post">
+        
+        <input type="submit" value="Politics Ontology" class="btn btn-danger">
+      </form>
+    </td>
+  </tr>
+</table>
+
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
     <script type="text/javascript">

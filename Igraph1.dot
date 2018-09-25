@@ -8,4 +8,7 @@ earn->share[len=4.02490463924947,label=0.158365120250175];
 investor->risk[len=3.7500434966523,label=0.249985501115899,dir=back];
 risk->bank[len=3.24064246284716,label=0.419785845717614,dir=both];
 bank->trade[len=4.32425646891984,label=0.0585811770267189];
+risk[color="red"];
+bank[color="red"];
+earn[color="red"];
 }
